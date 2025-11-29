@@ -195,11 +195,16 @@ export async function GET(_req: NextRequest) {
 
         const outYaml = YAML.stringify(processed);
 
+        const headers = new Headers();
+        headers.set("Content-Type", "text/yaml; charset=utf-8");
+        headers.set("Content-Disposition", `attachment;filename*=UTF-8''${encodeURIComponent("国际机场")}` || "");
+        headers.set("Profile-Update-Interval", resp.headers.get("Profile-Update-Interval") || "");
+        headers.set("Profile-Web-Page-URL", "https://lab.pectics.me");
+        headers.set("Subscription-Userinfo", resp.headers.get("Subscription-Userinfo") || "");
+
         return new NextResponse(outYaml, {
             status: 200,
-            headers: {
-                "Content-Type": "text/yaml; charset=utf-8",
-            },
+            headers,
         });
     } catch (e: any) {
         console.error("处理 Clash 配置出错:", e);
