@@ -5,7 +5,7 @@ export function proxy(req: NextRequest) {
     const url = req.nextUrl
 
     // internal 鉴权
-    if (url.pathname.startsWith('/_internal')) {
+    if (url.pathname.startsWith('/internal')) {
 
         // 1. header 优先
         let token = req.headers.get('Authorization')?.replace(/Bearer /i, '') || null;
@@ -29,6 +29,6 @@ export function proxy(req: NextRequest) {
 
 export const config = {
     matcher: [
-        '/_internal/:path*',
+        '/internal/:path*',
     ],
 }
