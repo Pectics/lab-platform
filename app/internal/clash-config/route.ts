@@ -176,7 +176,10 @@ export async function GET(_req: NextRequest) {
             );
         }
 
-        const resp = await fetch(baseUrl, { cache: "no-store" });
+        const resp = await fetch(baseUrl, {
+            cache: "no-store",
+            headers: { "User-Agent": "clash-verge-rev/v2.3.2" },
+        });
 
         if (!resp.ok) {
             return NextResponse.json(
