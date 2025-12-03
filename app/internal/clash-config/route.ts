@@ -157,8 +157,40 @@ function processClashConfig(config: ClashConfig): ClashConfig {
 
     // 3.1 ChatGPT 规则插到最前面
     rules.unshift(
+        "DOMAIN-SUFFIX,auth.openai.com,ChatGPT",
         "DOMAIN-SUFFIX,chatgpt.com,ChatGPT",
-        "DOMAIN-SUFFIX,openai.com,ChatGPT"
+        "DOMAIN-SUFFIX,ct.sendgrid.net,ChatGPT",
+        "DOMAIN-SUFFIX,featuregates.org,ChatGPT",
+        "DOMAIN-SUFFIX,intercom.io,ChatGPT",
+        "DOMAIN-SUFFIX,intercomcdn.com,ChatGPT",
+        "DOMAIN-SUFFIX,oaistatic.com,ChatGPT",
+        "DOMAIN-SUFFIX,oaiusercontent.com,ChatGPT",
+        "DOMAIN-SUFFIX,openai.com,ChatGPT",
+        "DOMAIN-SUFFIX,statsig.com,ChatGPT",
+        "DOMAIN,android.chat.openai.com,ChatGPT",
+        "DOMAIN,auth0.openai.com,ChatGPT",
+        "DOMAIN,cdn.openaimerge.com,ChatGPT",
+        "DOMAIN,cdn.workos.com,ChatGPT",
+        "DOMAIN,challenges.cloudflare.com,ChatGPT",
+        "DOMAIN,chat.openai.com,ChatGPT",
+        "DOMAIN,desktop.chat.openai.com,ChatGPT",
+        "DOMAIN,events.statsigapi.net,ChatGPT",
+        "DOMAIN,featureassets.org,ChatGPT",
+        "DOMAIN,forwarder.workos.com,ChatGPT",
+        "DOMAIN,humb.apple.com,ChatGPT",
+        "DOMAIN,images.workoscdn.com,ChatGPT",
+        "DOMAIN,ios.chat.openai.com,ChatGPT",
+        "DOMAIN,js.intercomcdn.com,ChatGPT",
+        "DOMAIN,js.stripe.com,ChatGPT",
+        "DOMAIN,o207216.ingest.sentry.io,ChatGPT",
+        "DOMAIN,o33249.ingest.sentry.io,ChatGPT",
+        "DOMAIN,prodregistryv2.org,ChatGPT",
+        "DOMAIN,rum.browser-intake-datadoghq.com,ChatGPT",
+        "DOMAIN,setup.auth.openai.com,ChatGPT",
+        "DOMAIN,setup.workos.com,ChatGPT",
+        "DOMAIN,statsigapi.net,ChatGPT",
+        "DOMAIN,tcr9i.chat.openai.com,ChatGPT",
+        "DOMAIN,workos.imgix.net,ChatGPT",
     );
 
     return config;
