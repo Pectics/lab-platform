@@ -10,16 +10,16 @@ export default function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="p-4">
-          <h2 className="text-lg font-semibold">QR Bridge</h2>
+          <h2 className="text-lg font-semibold">Card 1</h2>
           <p className="text-muted-foreground text-sm">
-            扫码 → 数据 → 传输 → 生成
+            Description for Card 1.
           </p>
         </Card>
 
         <Card className="p-4">
-          <h2 className="text-lg font-semibold">Clash Blender</h2>
+          <h2 className="text-lg font-semibold">Card 2</h2>
           <p className="text-muted-foreground text-sm">
-            合并多个服务商的代理配置。
+            Description for Card 2.
           </p>
         </Card>
       </div>
