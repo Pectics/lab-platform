@@ -1,55 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import YAML from "yaml";
-import type { ClashConfig, ClashProxyGroup } from "./types";
+import type { ClashConfig, ClashProxy, ClashProxyGroup } from "./types";
 
-const flags: Record<string, string> = {
-    HK: "🇭🇰",
-    TW: "🇹🇼",
-    SG: "🇸🇬",
-    JP: "🇯🇵",
-    US: "🇺🇸",
-    MY: "🇲🇾",
-    GB: "🇬🇧",
-    TH: "🇹🇭",
-    AR: "🇦🇷",
-    BR: "🇧🇷",
-};
-
-function flagize(name: string): string {
-    const region = name.match(/^([A-Z]{2})/);
-    if (region && flags[region[1]])
-        return name.replace(region[0], flags[region[1]]);
-    return name;
-}
-
-function namechange(name: string): string {
-    return flagize(name)
-        .replace(/ (..(?:负载|路由)) (..加速) (\d+)/, " $3 $1$2")
-        .replace("全局负载", "全局")
-        .replace("混合负载", "混合")
-        .replace("智能路由", "智能")
-        .replace("动态加速", "D+")
-        .replace("全球加速", "G+");
+const FLAG_REGEX = /^\p{RI}\p{RI}/u;
+function hasFlag(proxy: string | ClashProxy): boolean {
+    return FLAG_REGEX.test(typeof proxy === "string" ? proxy : proxy.name);
 }
 
 function processClashConfig(config: ClashConfig): ClashConfig {
-    const proxies = Array.isArray(config.proxies) ? config.proxies : [];
+    
+    // 1. proxies：只保留国旗开头（/\p{RI}\p{RI}/）的节点
+    const proxies = Array.isArray(config.proxies)
+        ? config.proxies.filter(hasFlag)
+        : [];
     config.proxies = proxies;
-
-    // 1. proxies：删前 4 个 + 重命名
-    if (proxies.length > 0) {
-        proxies.splice(0, 4);
-        for (const proxy of proxies) {
-            if (proxy.name) {
-                proxy.name = namechange(proxy.name);
-            }
-        }
-    }
 
     // 1.1 收集 🇺🇸 节点
     const usProxyNames = proxies
-        .filter((p) => typeof p.name === "string" && p.name.startsWith("🇺🇸"))
-        .map((p) => p.name as string);
+        .map(p => p.name)
+        .filter(n => n.startsWith("🇺🇸"));
 
     // 1.2 静态住宅代理注入
     const ispHost = process.env.CLASH_ISP_HOST;
@@ -85,9 +54,7 @@ function processClashConfig(config: ClashConfig): ClashConfig {
     }
 
     // 2. proxy-groups
-    const groups = Array.isArray(config["proxy-groups"])
-        ? config["proxy-groups"]!
-        : [];
+    const groups = Array.isArray(config["proxy-groups"]) ? config["proxy-groups"] : [];
     config["proxy-groups"] = groups;
 
     let brand = "";
@@ -98,20 +65,13 @@ function processClashConfig(config: ClashConfig): ClashConfig {
 
             if (!Array.isArray(group.proxies)) continue;
 
+            // 正则筛选
+            group.proxies = group.proxies.filter(hasFlag);
+            // 记录品牌名、添加另外两组
             if (i === 0) {
-                // 第一个组：记录品牌名 + 改名
                 brand = group.name;
                 group.name = "国际机场";
-
-                // 去掉索引 2-5
-                group.proxies.splice(2, 4);
-
-                // 重命名组内代理名
-                group.proxies = group.proxies.map((p) => namechange(p));
-            } else if (i === 1 || i === 2) {
-                // 第二、第三个组：删前 4 个 + 重命名
-                group.proxies.splice(0, 4);
-                group.proxies = group.proxies.map((p) => namechange(p));
+                group.proxies.unshift("自动选择", "故障转移");
             }
         }
 
@@ -155,8 +115,11 @@ function processClashConfig(config: ClashConfig): ClashConfig {
         }
     }
 
-    // 3.1 ChatGPT 规则插到最前面
+    // 3.1 个性化规则插到最前面
     rules.unshift(
+        // Google 相关域名
+        "DOMAIN-KEYWORD,google,ChatGPT",
+        // ChatGPT 相关域名
         "DOMAIN-SUFFIX,auth.openai.com,ChatGPT",
         "DOMAIN-SUFFIX,chatgpt.com,ChatGPT",
         "DOMAIN-SUFFIX,ct.sendgrid.net,ChatGPT",
