@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import YAML from "yaml";
-import type { ClashConfig, ClashProxy, ClashProxyGroup } from "./types";
+import type { ClashConfig, ClashProxy } from "./types";
 
 const FLAG_REGEX = /^\p{RI}\p{RI}/u;
 function hasFlag(proxy: string | ClashProxy): boolean {
@@ -15,12 +15,7 @@ function processClashConfig(config: ClashConfig): ClashConfig {
         : [];
     config.proxies = proxies;
 
-    // 1.1 收集 🇺🇸 节点
-    const usProxyNames = proxies
-        .map(p => p.name)
-        .filter(n => n.startsWith("🇺🇸"));
-
-    // 1.2 静态住宅代理注入
+    // 1.1 静态住宅代理注入
     const ispHost = process.env.CLASH_ISP_HOST;
     const ispPortRaw = process.env.CLASH_ISP_PORT;
     const ispUser = process.env.CLASH_ISP_USERNAME;
@@ -28,15 +23,7 @@ function processClashConfig(config: ClashConfig): ClashConfig {
 
     const ispPort = ispPortRaw ? Number(ispPortRaw) : NaN;
 
-    let dialerProxyForISP: string;
-
-    if (usProxyNames.length > 0) {
-        // 有 US 节点，用 ISP Dialer
-        dialerProxyForISP = "ISP Dialer";
-    } else {
-        // 没有 US 节点，fallback 到 DIRECT
-        dialerProxyForISP = "DIRECT";
-    }
+    const dialerProxyForISP = "自动选择";
 
     if (!ispHost || !ispUser || !ispPass || Number.isNaN(ispPort)) {
         console.warn("静态住宅代理环境变量未配置完整，将跳过注入。");
@@ -75,26 +62,7 @@ function processClashConfig(config: ClashConfig): ClashConfig {
             }
         }
 
-        // 2.2 如果有 US 节点，就加 ISP Dialer 组（url-test）
-        if (usProxyNames.length > 0) {
-            const ispDialerGroup: ClashProxyGroup = {
-                name: "ISP Dialer",
-                type: "url-test",
-                proxies: usProxyNames,
-                url: "http://www.gstatic.com/generate_204",
-                interval: 3600,
-            };
-
-            // 防止重复
-            const existIndex = groups.findIndex((g) => g.name === "ISP Dialer");
-            if (existIndex >= 0) {
-                groups[existIndex] = ispDialerGroup;
-            } else {
-                groups.push(ispDialerGroup);
-            }
-        }
-
-        // 2.3 在最前加 ChatGPT 代理组
+        // 2.2 在最前加 ChatGPT 代理组
         groups.unshift({
             name: "ChatGPT",
             type: "select",
