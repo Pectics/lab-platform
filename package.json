@@ -10,6 +10,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --import tsx scripts/migrate.ts",
+    "db:check": "drizzle-kit check",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
@@ -22,7 +25,9 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm test:integration && pnpm build"
   },
   "dependencies": {
+    "drizzle-orm": "0.45.2",
     "next": "16.2.12",
+    "pg": "8.22.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zod": "4.4.3"
@@ -32,13 +37,16 @@
     "@stryker-mutator/core": "9.6.1",
     "@stryker-mutator/vitest-runner": "9.6.1",
     "@types/node": "24.10.1",
+    "@types/pg": "8.20.3",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@vitest/coverage-v8": "4.1.10",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.12",
+    "drizzle-kit": "0.31.10",
     "fast-check": "4.9.0",
     "typescript": "6.0.3",
+    "tsx": "4.21.0",
     "vitest": "4.1.10"
   }
 }

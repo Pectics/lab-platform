@@ -3,7 +3,12 @@ const config = {
   plugins: ["@stryker-mutator/vitest-runner"],
   testRunner: "vitest",
   reporters: ["clear-text", "progress"],
-  mutate: ["src/lib/http/**/*.ts", "!src/**/*.test.ts"],
+  mutate: [
+    "src/lib/http/**/*.ts",
+    "src/lib/domain/**/*.ts",
+    "!src/**/*.test.ts",
+    "!src/lib/domain/types.ts",
+  ],
   thresholds: {
     high: 100,
     low: 100,

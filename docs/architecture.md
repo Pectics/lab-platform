@@ -26,3 +26,17 @@ top of them.
 
 All database, authentication, token, encryption, and rendering code runs in the
 Node.js runtime. Browser components receive only explicitly public view models.
+
+## Module dependency rule
+
+```text
+Presentation (routes / server actions)
+  -> Application use cases
+    -> Domain policies and state machines
+      -> Ports (repository, crypto, identity, renderer, agent, audit, logger)
+        <- Infrastructure adapters (Postgres, Auth.js, Node crypto, HTTP)
+```
+
+Dependencies point inward. Domain and port modules cannot import Next.js,
+Drizzle, PostgreSQL, environment readers, or concrete cryptography. Adapters may
+implement ports, and composition roots may wire adapters to use cases.

@@ -16,7 +16,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts", "src/app/api/**/route.ts"],
-      exclude: ["src/**/*.test.ts"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/infrastructure/database/**/*.ts",
+        "src/lib/domain/types.ts",
+        "src/lib/ports/**/*.ts",
+      ],
       thresholds: {
         perFile: true,
         statements: 100,
