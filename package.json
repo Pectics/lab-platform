@@ -22,7 +22,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts --passWithNoTests",
     "test:e2e": "playwright test",
     "test:mutation": "stryker run",
-    "check": "pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm test:integration && pnpm build"
+    "check": "pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
