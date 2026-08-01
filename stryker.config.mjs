@@ -8,8 +8,12 @@ const config = {
     "src/lib/domain/**/*.ts",
     "src/lib/security/**/*.ts",
     "src/lib/auth/**/*.ts",
+    "src/lib/contracts/**/*.ts",
+    "src/lib/subscription/**/*.ts",
     "!src/**/*.test.ts",
     "!src/lib/domain/types.ts",
+    "!src/lib/contracts/agent.ts",
+    "!src/lib/contracts/projection.ts",
   ],
   thresholds: {
     high: 100,
