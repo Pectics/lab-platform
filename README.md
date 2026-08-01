@@ -29,6 +29,19 @@ pnpm test:e2e
 pnpm test:mutation
 ```
 
+Database integration tests use an isolated PostgreSQL 16 database:
+
+```bash
+docker compose -f compose.test.yml up -d --wait
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/lab_platform_test pnpm db:migrate
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/lab_platform_test pnpm test:integration
+docker compose -f compose.test.yml down
+```
+
+The test helper refuses to clean a database unless its name ends in `_test`.
+Production uses committed, reviewed migrations through `pnpm db:migrate`; schema
+push is never part of the deployment path.
+
 Unit tests enforce per-file 100% statement, branch, function, and line
 coverage. Integration tests run against PostgreSQL 16, browser tests exercise
 the public boundary, and mutation tests verify that assertions detect semantic
