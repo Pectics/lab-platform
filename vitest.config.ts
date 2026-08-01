@@ -19,6 +19,7 @@ export default defineConfig({
       exclude: [
         "src/**/*.test.ts",
         "src/infrastructure/database/**/*.ts",
+        "src/app/api/auth/**/route.ts",
         "src/lib/domain/types.ts",
         "src/lib/ports/**/*.ts",
       ],

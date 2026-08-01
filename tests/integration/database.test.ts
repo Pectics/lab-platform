@@ -1,9 +1,12 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { DomainInvariantError } from "@/lib/domain/errors";
 import { PostgresControlPlaneRepository } from "@/infrastructure/database/control-plane-repository";
+import { PostgresSubscriptionTokenManager } from "@/infrastructure/database/subscription-token-manager";
+import { BearerTokenService } from "@/lib/security/token";
 import {
   agents,
+  auditEvents,
   chainHops,
   chains,
   endpointCredentials,
@@ -57,12 +60,13 @@ describe("PostgreSQL migration baseline", () => {
           'administrators', 'servers', 'endpoints', 'endpoint_shared_secrets',
           'profiles', 'profile_endpoints', 'subscription_tokens', 'chains',
           'chain_hops', 'agents', 'token_server_access_identities',
-          'endpoint_credentials', 'audit_events'
+          'endpoint_credentials', 'audit_events', 'auth_users', 'auth_accounts',
+          'auth_sessions', 'auth_verification_tokens'
         )
       order by table_name
     `);
 
-    expect(result.rows.map(({ table_name }) => table_name)).toHaveLength(13);
+    expect(result.rows.map(({ table_name }) => table_name)).toHaveLength(17);
   });
 
   it("enforces token, endpoint, chain, and one-agent-per-server constraints", async () => {
@@ -222,5 +226,68 @@ describe("PostgresControlPlaneRepository", () => {
         keyVersion: 1,
       }),
     ).rejects.toThrow();
+  });
+});
+
+describe("PostgresSubscriptionTokenManager", () => {
+  it("persists only a digest, rotates atomically, invalidates the old secret, and audits safely", async () => {
+    let entropy = 0;
+    const tokenService = new BearerTokenService("p".repeat(32), (size) =>
+      new Uint8Array(size).fill(++entropy),
+    );
+    const manager = new PostgresSubscriptionTokenManager(database.db, tokenService);
+    const [profile] = await database.db.insert(profiles).values({ name: "Friends" }).returning();
+    const created = await manager.create({ profileId: profile.id, remark: "test device" });
+
+    expect(await manager.authenticate(created.secret, new Date())).toBe(created.id);
+    const [stored] = await database.db
+      .select()
+      .from(subscriptionTokens)
+      .where(eq(subscriptionTokens.id, created.id));
+    expect(stored.secretDigest).toBe(created.digest);
+    expect(stored.secretPrefix).toBe(created.prefix);
+    expect(JSON.stringify(stored)).not.toContain(created.secret);
+
+    const rotated = await manager.rotate(created.id, new Date("2026-08-01T00:00:00.000Z"));
+    expect(rotated?.secret).not.toBe(created.secret);
+    expect(await manager.authenticate(created.secret, new Date())).toBeNull();
+    expect(await manager.authenticate(rotated!.secret, new Date())).toBe(created.id);
+    expect(await manager.rotate("00000000-0000-0000-0000-000000000000", new Date())).toBeNull();
+
+    const events = await database.db.select().from(auditEvents);
+    expect(events.map(({ action }) => action)).toEqual([
+      "subscription_token.created",
+      "subscription_token.rotated",
+    ]);
+    expect(JSON.stringify(events)).not.toContain(created.secret);
+    expect(JSON.stringify(events)).not.toContain(rotated!.secret);
+  });
+
+  it("rejects disabled, expired, and archived tokens without exposing their state", async () => {
+    let entropy = 10;
+    const manager = new PostgresSubscriptionTokenManager(
+      database.db,
+      new BearerTokenService("p".repeat(32), (size) => new Uint8Array(size).fill(++entropy)),
+    );
+    const [profile] = await database.db.insert(profiles).values({ name: "Friends" }).returning();
+    const issued = await manager.create({ profileId: profile.id });
+    const now = new Date("2026-08-01T00:00:00.000Z");
+
+    await database.db
+      .update(subscriptionTokens)
+      .set({ enabled: false })
+      .where(eq(subscriptionTokens.id, issued.id));
+    expect(await manager.authenticate(issued.secret, now)).toBeNull();
+    await database.db
+      .update(subscriptionTokens)
+      .set({ enabled: true, expiresAt: now })
+      .where(eq(subscriptionTokens.id, issued.id));
+    expect(await manager.authenticate(issued.secret, now)).toBeNull();
+    await database.db
+      .update(subscriptionTokens)
+      .set({ expiresAt: null, archivedAt: now })
+      .where(eq(subscriptionTokens.id, issued.id));
+    expect(await manager.authenticate(issued.secret, now)).toBeNull();
+    expect(await manager.authenticate("sub_live_unknown", now)).toBeNull();
   });
 });

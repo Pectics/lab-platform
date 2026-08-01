@@ -13,3 +13,10 @@ test("foundation page and health boundary are available", async ({ page, request
     service: "lab-platform",
   });
 });
+
+test("control surface fails closed without an administrator session", async ({ page }) => {
+  const response = await page.goto("/control");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByText("Authenticated administrator surface")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Control Plane" })).toHaveCount(0);
+});
