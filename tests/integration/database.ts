@@ -37,7 +37,11 @@ export async function truncateApplicationTables(
       endpoint_shared_secrets,
       endpoints,
       servers,
-      administrators
+      administrators,
+      auth_sessions,
+      auth_accounts,
+      auth_verification_tokens,
+      auth_users
     restart identity cascade
   `);
 }

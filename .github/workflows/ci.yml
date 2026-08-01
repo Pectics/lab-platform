@@ -9,8 +9,12 @@ permissions:
   contents: read
 
 env:
+  AUTH_GITHUB_ID: ci-placeholder
+  AUTH_GITHUB_SECRET: ci-placeholder
+  AUTH_SECRET: ci-only-secret-that-is-never-used-in-production
   CI: "true"
   DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/lab_platform_test
+  GITHUB_ADMIN_USER_ID: "186024864"
 
 jobs:
   quality:
@@ -59,6 +63,20 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: lab_platform_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lab_platform_test"
+          --health-interval 1s
+          --health-timeout 5s
+          --health-retries 30
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -69,6 +87,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
 

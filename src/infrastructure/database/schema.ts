@@ -48,10 +48,82 @@ export const credentialState = pgEnum("credential_state", [
 ]);
 export const auditActorType = pgEnum("audit_actor_type", ["administrator", "agent", "system"]);
 
+export const authUsers = pgTable(
+  "auth_users",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    name: varchar("name", { length: 255 }),
+    email: varchar("email", { length: 320 }),
+    emailVerified: timestamp("email_verified", { withTimezone: true, precision: 3 }),
+    image: text("image"),
+    githubUserId: bigint("github_user_id", { mode: "number" }),
+  },
+  (table) => [
+    uniqueIndex("auth_users_email_uq").on(table.email),
+    uniqueIndex("auth_users_github_user_id_uq").on(table.githubUserId),
+  ],
+);
+
+export const authAccounts = pgTable(
+  "auth_accounts",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    type: varchar("type", { length: 64 }).notNull(),
+    provider: varchar("provider", { length: 128 }).notNull(),
+    providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: varchar("token_type", { length: 64 }),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.provider, table.providerAccountId],
+      name: "auth_accounts_provider_account_pk",
+    }),
+    index("auth_accounts_user_idx").on(table.userId),
+  ],
+);
+
+export const authSessions = pgTable(
+  "auth_sessions",
+  {
+    sessionToken: varchar("session_token", { length: 255 }).primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    expires: timestamp("expires", { withTimezone: true, precision: 3 }).notNull(),
+  },
+  (table) => [index("auth_sessions_user_idx").on(table.userId)],
+);
+
+export const authVerificationTokens = pgTable(
+  "auth_verification_tokens",
+  {
+    identifier: varchar("identifier", { length: 320 }).notNull(),
+    token: varchar("token", { length: 255 }).notNull(),
+    expires: timestamp("expires", { withTimezone: true, precision: 3 }).notNull(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.identifier, table.token],
+      name: "auth_verification_tokens_pk",
+    }),
+  ],
+);
+
 export const administrators = pgTable(
   "administrators",
   {
     id: uuid("id").defaultRandom().primaryKey(),
+    authUserId: uuid("auth_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict", onUpdate: "cascade" }),
     githubUserId: bigint("github_user_id", { mode: "number" }).notNull(),
     githubLogin: varchar("github_login", { length: 255 }),
     displayName: varchar("display_name", { length: 255 }),
@@ -61,6 +133,7 @@ export const administrators = pgTable(
   },
   (table) => [
     uniqueIndex("administrators_github_user_id_uq").on(table.githubUserId),
+    uniqueIndex("administrators_auth_user_id_uq").on(table.authUserId),
     check("administrators_github_user_id_positive", sql`${table.githubUserId} > 0`),
   ],
 );
@@ -379,6 +452,10 @@ export const schema = {
   administrators,
   agents,
   auditEvents,
+  authAccounts,
+  authSessions,
+  authUsers,
+  authVerificationTokens,
   chainHops,
   chains,
   endpointCredentials,

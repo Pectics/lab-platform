@@ -6,6 +6,8 @@ const config = {
   mutate: [
     "src/lib/http/**/*.ts",
     "src/lib/domain/**/*.ts",
+    "src/lib/security/**/*.ts",
+    "src/lib/auth/**/*.ts",
     "!src/**/*.test.ts",
     "!src/lib/domain/types.ts",
   ],
