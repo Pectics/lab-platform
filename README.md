@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lab Platform
 
-## Getting Started
+Lab Platform is being rebuilt as a database-backed proxy control plane. The
+active tree intentionally contains only the new foundation; the legacy Next.js
+application and static Clash endpoint remain available through the immutable
+Git references documented in [`docs/legacy-archive.md`](docs/legacy-archive.md).
 
-First, run the development server:
+## Requirements
+
+- Node.js 24.12.x
+- pnpm 11.18.x
+- Docker with Compose
+
+## Local development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install --frozen-lockfile
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and provide development-only values. Never
+commit secrets or production credentials.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Quality gates
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm check
+pnpm test:e2e
+pnpm test:mutation
+```
 
-## Learn More
+Unit tests enforce per-file 100% statement, branch, function, and line
+coverage. Integration tests run against PostgreSQL 16, browser tests exercise
+the public boundary, and mutation tests verify that assertions detect semantic
+changes rather than merely execute lines.
 
-To learn more about Next.js, take a look at the following resources:
+## Security boundary
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The control plane is the source of truth for nodes and subscriptions. Raw
+subscription and agent tokens must never be stored. Server-only secrets must
+never cross into browser bundles, logs, audit metadata, or API responses.
